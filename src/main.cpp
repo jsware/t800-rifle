@@ -24,15 +24,15 @@ T800Westinghouse rifle = T800Westinghouse(hud);
  * 
  */
 void setup() {
-  if(Serial) Serial.begin(9600);
+  if(Serial) Serial.begin(115200);
 
-  hud.println(F("\n\n\nJSWare Systems"));
-  hud.println(F("Westinghouse M95A1 Phased Plasma Rifle"));
-  hud.print(F("40W Range Modification Version ")); hud.println(F(VER_STRING));
+  hud.print(F("\n\nCYBERDINE SYSTEMS (JSWARE DIVISION)\nWESTINGHOUSE M95A1 PHASED PLASMA RIFLE\n40W RANGE VERSION "));
+  hud.println(F(VER_STRING));
+  hud.println("\nSYSTEM RESTART");
 
   rifle.init();
 
-  hud.println(F("\nSystem restart complete"));
+  hud.println(F("SYSTEM RESTART COMPLETE\n"));
 }
 
 /**
@@ -40,11 +40,20 @@ void setup() {
  * 
  */
 void loop() {
+  static int count = 0;
   char cmd = '\0';
 
-  rifle.cock();
+  DIAG {
+    hud.print(F("Loop "));
+    hud.print(++count);
+    hud.println("");
+  }
 
-  if(hud.available()) {
+  if(rifle.isTriggered()) {
+    DIAG hud.println(F("Manual Fire"));
+    rifle.setMode(T800Westinghouse::MODE_OFF);
+    rifle.fire(4);
+  } else if(hud.available()) {
     cmd = toupper(hud.read());
 
     switch(cmd) {
@@ -84,6 +93,7 @@ void loop() {
       case '5':
       case '6':
       case '7':
+      case '8':
         Serial.print(F("Fire Mode "));
         Serial.println(cmd);
         rifle.setMode(T800Westinghouse::MODE_OFF);

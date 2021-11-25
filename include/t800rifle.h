@@ -24,14 +24,16 @@ class T800Westinghouse
     //
 
     // AdaFruit Audio FX Mini Sound Board: https://www.adafruit.com/product/2341.
-    static const int SFX_TX = 10;
-    static const int SFX_RX = 11;
+    static const int SFX_TX = 2;
+    static const int SFX_RX = 3;
     static const int SFX_RST = 4;
     static const int SFX_ACT = 5;
+    static const int SFX_LSR = 6;
     static const int SFX_LED = 7;
 
     // Unconnected AR PIN for random seed generation.
     static const int PIN_RND = 0;
+    static const int PIN_TRG = 8;
 
     // Operational modes.
     static const char MODE_OFF = 'Q'; // No firing.
@@ -42,7 +44,7 @@ class T800Westinghouse
     static const char MODE_DEFAULT = MODE_AGGRESSIVE; // Default to random firing.
 
     // Number of sounds.
-    static const int SOUND_COUNT = 8;
+    static const int SOUND_COUNT = 9;
 
   public:
     //
@@ -64,7 +66,9 @@ class T800Westinghouse
                      uint8_t rxPin = SFX_RX,
                      uint8_t resetPin = SFX_RST,
                      uint8_t actPin = SFX_ACT,
-                     uint8_t ledPin = SFX_LED);
+                     uint8_t ledPin = SFX_LED,
+                     uint8_t lsrPin = SFX_LSR,
+                     uint8_t trgPin = PIN_TRG);
 
   public:
     //
@@ -84,12 +88,6 @@ class T800Westinghouse
      * @return false SFX failed to reset.
      */
     bool reset();
-
-    /**
-     * @brief Flush SFX board response data before firing (for reliability).
-     * 
-     */
-    void cock();
 
     /**
      * @brief Fire the rifle using current mode.
@@ -115,13 +113,21 @@ class T800Westinghouse
      */
     void setMode(char mode);
 
+    /**
+     * @brief Determine if the trigger is pressed
+     * 
+     * @return true Trigger button pressed.
+     * @return false Trigger button not pressed.
+     */
+    bool isTriggered() {return (digitalRead(trgPin) == LOW);}
+
   private:
     //
     // Helpers...
     //
     int readLine();
 
-    void muzzleFlash(const struct FlashTiming *timings);
+    void muzzleFlash(const struct FlashTiming *timings, bool laser = false);
 
   private:
     //
@@ -129,7 +135,8 @@ class T800Westinghouse
     //
 
     // Array of Muzzle Flash Timings (each array item is an array of timings).
-    static const struct FlashTiming *FLASH_TIMINGS[SOUND_COUNT];
+    static const struct FlashTiming *FLASH_TIMINGS[];
+    static const char *FIRE_NAMES[]; // Names of each shot.
 
     SoftwareSerial ss; // SFX board serial communications.
     Stream &hud;  // Heads-up-Display for diagnostics.
@@ -138,7 +145,9 @@ class T800Westinghouse
     uint8_t actPin; // Pin to monitor SFX board activity.
 
     uint8_t ledPin; // Pin to control muzzle flash.
-
+    uint8_t lsrPin; // Pin to control muzzle laser.
+    uint8_t trgPin; // Pin to control manual firing trigger.
+    
     char rifleMode; // Operational mode.
     int lastFire; // Last fire sound used.
 

@@ -30,12 +30,16 @@ T800Westinghouse(Stream &hd,
                  uint8_t rx,
                  uint8_t rst,
                  uint8_t act,
-                 uint8_t led)
+                 uint8_t led,
+                 uint8_t lsr,
+                 uint8_t trg)
 : ss(tx,rx)
 , hud(hd)
 , resetPin(rst)
 , actPin(act)
 , ledPin(led)
+, lsrPin(lsr)
+, trgPin(trg)
 , rifleMode(MODE_DEFAULT)
 , lastFire(-1)
 {
@@ -46,18 +50,20 @@ T800Westinghouse(Stream &hd,
 void T800Westinghouse::
 init()
 {
-  hud.println(F("\nSystem start diagnostic"));
+  hud.println(F(">DIAGNOSTIC\n>INITIALISING IO"));
 
   pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(SFX_ACT, INPUT);
-  pinMode(SFX_LED, OUTPUT);
+  pinMode(actPin, INPUT);
+  pinMode(ledPin, OUTPUT);
+  pinMode(lsrPin, OUTPUT);
+  pinMode(trgPin, INPUT_PULLUP);
 
   randomSeed(analogRead(PIN_RND));  // Randomise
 
-  hud.println(F("Checking weapon"));
+  hud.println(F(">CHECKING BOARDS"));
   ss.begin(9600);
   if (!reset()) {
-    hud.println(F("PRIMARY WEAPON FAILURE"));
+    hud.println(F("ERROR: BOARD NOT RESPONDING"));
     while (true) {
       S_O_S();
       gap(EOW_LEN);
@@ -102,25 +108,7 @@ readLine() {
   int x = ss.readBytesUntil('\n', lineBuffer, sizeof(lineBuffer) - 1);
   lineBuffer[x] = 0;
 
-  if (ss.peek() == '\r') {
-    ss.read();
-  }
-
   return x;
-}
-
-
-void T800Westinghouse::
-cock() {
-  // Read all available serial input to flush pending data.
-  uint16_t timeoutloop = 0;
-  while (timeoutloop++ < 40) {
-    while(ss.available()) {
-      ss.read();
-      timeoutloop = 0;  // If char was received reset the timer
-    }
-    delay(1);
-  }
 }
 
 
@@ -128,10 +116,7 @@ bool T800Westinghouse::
 fire(int n) {
   char c = '0' + n; // Convert file number to char '0' through '9'.
 
-  // Clear any previous input.
-  while (ss.available()) {
-    hud.print(ss.read());
-  }
+  hud.println(FIRE_NAMES[n]);
 
   //Send #n to the SFX board.
   ss.print(F("#"));
@@ -143,12 +128,15 @@ fire(int n) {
   readLine(); // SFX outcome.
   DIAG hud.println(lineBuffer);
 
-  muzzleFlash(FLASH_TIMINGS[n]);
+  muzzleFlash(FLASH_TIMINGS[n], true);
 
   // Check we got "play" back.
   if (strstr(lineBuffer, "play") == 0) {
     return false;
   }
+
+  readLine(); // SFX done.
+  DIAG hud.println(lineBuffer);
 
   lastFire=n;
   return true;
@@ -158,10 +146,16 @@ fire(int n) {
 bool T800Westinghouse::
 fire() {
   bool rc = false;
+  int thisFire;
 
   switch(rifleMode) {
     case MODE_AGGRESSIVE:
-      rc = fire(random(SOUND_COUNT));
+      do {
+        thisFire=random(SOUND_COUNT);
+      } while(thisFire == lastFire);
+
+      lastFire = thisFire;
+      rc = fire(thisFire);
       break;
 
     case MODE_BELLIGERENT:
@@ -193,7 +187,7 @@ fire() {
 
 
 void T800Westinghouse::
-muzzleFlash(const struct FlashTiming *timings)
+muzzleFlash(const struct FlashTiming *timings, bool laser)
 {
   int ms = 0; // Play time in milliseconds (approx).
 
@@ -207,19 +201,34 @@ muzzleFlash(const struct FlashTiming *timings)
     // Wait to turn on flash.
     delay(onDelay);
     digitalWrite(ledPin, HIGH);
+    if(laser) {
+      digitalWrite(lsrPin, HIGH);
+    }
 
     // Wait to turn off flash.
     delay(offDelay);
     digitalWrite(ledPin, LOW);
+    digitalWrite(lsrPin, LOW);
 
     // Now we're at flash-off point, move to next flash.
     ms = timings->offMilli;
     timings++;
+
+    // Abort sound if the trigger has been pressed.
+    if(rifleMode != MODE_OFF && isTriggered()) {
+      break;
+    }
   }
 
   // Wait till SFX board shows no play activity.
   do {
     delay(100);
+
+    if(isTriggered()) {
+      ss.print(F("q"));
+
+      break; // Abort sequence
+    }
   } while(!digitalRead(actPin));
 }
 
@@ -353,7 +362,24 @@ const struct FlashTiming T07[] = {
   END_TIMINGS
 };
 
+const struct FlashTiming T08[] = {
+  {   3,   30 },
+  END_TIMINGS
+};
+
 // The array of each file's timing.
 const struct FlashTiming *T800Westinghouse::FLASH_TIMINGS[] = {
-  T00, T01, T02, T03, T04, T05, T06, T07
+  T00, T01, T02, T03, T04, T05, T06, T07, T08
+};
+
+const char *T800Westinghouse::FIRE_NAMES[] = {
+  "SINGLE",
+  "FOUR SLOW",
+  "FOUR FAST",
+  "SIX FAST",
+  "SIX ULTRA FAST",
+  "TWO BURSTS SHORT",
+  "TWO BURSTS LONG",
+  "THREE BURSTS",
+  "TERMINATED"
 };
