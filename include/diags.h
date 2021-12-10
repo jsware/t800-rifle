@@ -11,7 +11,7 @@
 #ifndef INCLUDED_DIAGS_H
 #define INCLUDED_DIAGS_H
 
-#define DIAG if(false)
+#define DEBUG false
 
 void dit(int count = 1);
 void dah(int count = 1);

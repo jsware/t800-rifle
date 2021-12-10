@@ -50,7 +50,7 @@ T800Westinghouse(Stream &hd,
 void T800Westinghouse::
 init()
 {
-  hud.println(F(">DIAGNOSTIC\n>INITIALISING IO"));
+  hud.println(F("Initialising I/O."));
 
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(actPin, INPUT);
@@ -58,12 +58,14 @@ init()
   pinMode(lsrPin, OUTPUT);
   pinMode(trgPin, INPUT_PULLUP);
 
+  hud.println(F("Randomising."));
   randomSeed(analogRead(PIN_RND));  // Randomise
 
-  hud.println(F(">CHECKING BOARDS"));
+  hud.println(F("Checking SFX Board."));
   ss.begin(9600);
+  
   if (!reset()) {
-    hud.println(F("ERROR: BOARD NOT RESPONDING"));
+    hud.println(F("ERROR: Board not responding!"));
     while (true) {
       S_O_S();
       gap(EOW_LEN);
@@ -84,10 +86,7 @@ reset()
   delay(1000); // Let it boot
 
   readLine();
-  DIAG hud.println(lineBuffer);
-
   readLine();
-  DIAG hud.println(lineBuffer);
   if (!strstr(lineBuffer, "Adafruit FX Sound Board")){
     return false;
   }
@@ -95,9 +94,7 @@ reset()
   delay(250);
 
   readLine(); // FAT type.
-  DIAG hud.println(lineBuffer);
   readLine(); // Files found.
-  DIAG hud.println(lineBuffer);
 
   return true;
 }
@@ -107,6 +104,8 @@ int T800Westinghouse::
 readLine() {
   int x = ss.readBytesUntil('\n', lineBuffer, sizeof(lineBuffer) - 1);
   lineBuffer[x] = 0;
+
+  hud.println(lineBuffer);
 
   return x;
 }
@@ -123,10 +122,7 @@ fire(int n) {
   ss.println(c);
 
   readLine(); // eat return.
-  DIAG hud.println(lineBuffer);
-
   readLine(); // SFX outcome.
-  DIAG hud.println(lineBuffer);
 
   muzzleFlash(FLASH_TIMINGS[n], true);
 
@@ -136,7 +132,6 @@ fire(int n) {
   }
 
   readLine(); // SFX done.
-  DIAG hud.println(lineBuffer);
 
   lastFire=n;
   return true;
@@ -177,8 +172,7 @@ fire() {
   }
 
   if(!rc) {
-    hud.print("MISFIRE ERROR: ");
-    hud.println(lineBuffer);  // SFX response will be the last entry of lineBuffer
+    hud.println("ERROR: Misfire!");
     S_O_S();
   }
 
@@ -225,7 +219,7 @@ muzzleFlash(const struct FlashTiming *timings, bool laser)
     delay(100);
 
     if(isTriggered()) {
-      ss.print(F("q"));
+      ss.print(F("q\n"));
 
       break; // Abort sequence
     }
@@ -373,13 +367,13 @@ const struct FlashTiming *T800Westinghouse::FLASH_TIMINGS[] = {
 };
 
 const char *T800Westinghouse::FIRE_NAMES[] = {
-  "SINGLE",
-  "FOUR SLOW",
-  "FOUR FAST",
-  "SIX FAST",
-  "SIX ULTRA FAST",
-  "TWO BURSTS SHORT",
-  "TWO BURSTS LONG",
-  "THREE BURSTS",
-  "TERMINATED"
+  "-- Single shot ----------",
+  "-- Four slow ------------",
+  "-- Four fast ------------",
+  "-- Six fast -------------",
+  "-- Six ultra fast -------",
+  "-- Two short bursts -----",
+  "-- Two long bursts ------",
+  "-- Three bursts ---------",
+  "-- You are terminated ---"
 };

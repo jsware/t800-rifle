@@ -13,11 +13,8 @@
 #include "t800rifle.h"
 #include "ver_info.h"
 
-// Define Heads-Up Display for diagnostics.
-Stream &hud(Serial);
-
 // Create a rifle.
-T800Westinghouse rifle = T800Westinghouse(hud);
+T800Westinghouse rifle = T800Westinghouse(Serial);
 
 /**
  * @brief One-time setup code here.
@@ -26,13 +23,13 @@ T800Westinghouse rifle = T800Westinghouse(hud);
 void setup() {
   if(Serial) Serial.begin(115200);
 
-  hud.print(F("\n\nCYBERDINE SYSTEMS (JSWARE DIVISION)\nWESTINGHOUSE M95A1 PHASED PLASMA RIFLE\n40W RANGE VERSION "));
-  hud.println(F(VER_STRING));
-  hud.println("\nSYSTEM RESTART");
+  Serial.print(F("\n\nCyberdine Systems (JSWare Division)\nWestinghouse M95A1 Phased Plasma Rifle\n40W Range Version "));
+  Serial.println(F(VER_STRING));
+  Serial.println("\nSystem Restart...");
 
   rifle.init();
 
-  hud.println(F("SYSTEM RESTART COMPLETE\n"));
+  Serial.println(F("System Restart Complete"));
 }
 
 /**
@@ -43,45 +40,47 @@ void loop() {
   static int count = 0;
   char cmd = '\0';
 
-  DIAG {
-    hud.print(F("Loop "));
-    hud.print(++count);
-    hud.println("");
+  ++count;
+  
+  if(DEBUG) {
+    Serial.print(F("Loop "));
+    Serial.print(count);
+    Serial.println("");
   }
 
   if(rifle.isTriggered()) {
-    DIAG hud.println(F("Manual Fire"));
+    Serial.println(F("Manual Firing"));
     rifle.setMode(T800Westinghouse::MODE_OFF);
     rifle.fire(4);
-  } else if(hud.available()) {
-    cmd = toupper(hud.read());
+  } else if(Serial.available()) {
+    cmd = toupper(Serial.read());
 
     switch(cmd) {
       case T800Westinghouse::MODE_RESET:
-        hud.println(F("Resetting"));
+        Serial.println(F("Resetting"));
         if (!rifle.reset()) {
-          hud.println(F("WEAPON RESET FAILED SEEK ALTERNATIVE"));
+          Serial.println(F("ERROR: Weapon reset failed"));
           S_O_S();
         }
         break; 
 
       case T800Westinghouse::MODE_OFF:
-        hud.println(F("Passive Mode"));
+        Serial.println(F("Passive Mode"));
         rifle.setMode(cmd);
         break;
 
       case T800Westinghouse::MODE_AGGRESSIVE:
-        hud.println(F("Aggressive Mode"));
+        Serial.println(F("Aggressive Mode"));
         rifle.setMode(cmd);
         break;
 
       case T800Westinghouse::MODE_BELLIGERENT:
-        hud.println(F("Belligerent Mode"));
+        Serial.println(F("Belligerent Mode"));
         rifle.setMode(cmd);
         break;
 
       case T800Westinghouse::MODE_COMBATIVE:
-        hud.println(F("Combative Mode"));
+        Serial.println(F("Combative Mode"));
         rifle.setMode(cmd);
         break;
 
@@ -98,7 +97,7 @@ void loop() {
         Serial.println(cmd);
         rifle.setMode(T800Westinghouse::MODE_OFF);
         if(!rifle.fire(cmd - '0')) {
-          hud.println(F("PRIMARY WEAPON DAMAGED SEEK ALTERNATIVE"));
+          Serial.println(F("ERROR: PRIMARY WEAPON DAMAGED SEEK ALTERNATIVE"));
         }
         break;
     }
