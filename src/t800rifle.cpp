@@ -25,23 +25,12 @@ struct FlashTiming {
 
 
 T800Westinghouse::
-T800Westinghouse(Stream &hd,
-                 uint8_t tx,
-                 uint8_t rx,
-                 uint8_t rst,
-                 uint8_t act,
-                 uint8_t led,
-                 uint8_t lsr,
-                 uint8_t trg)
-: ss(tx,rx)
-, hud(hd)
-, resetPin(rst)
-, actPin(act)
-, ledPin(led)
-, lsrPin(lsr)
-, trgPin(trg)
+T800Westinghouse()
+: ss(PIN_TX,PIN_RX)
 , rifleMode(MODE_DEFAULT)
 , lastFire(-1)
+, sr04(PIN_SND, PIN_ECH)
+, lastDistance(sr04.read())
 {
 
 }
@@ -50,22 +39,25 @@ T800Westinghouse(Stream &hd,
 void T800Westinghouse::
 init()
 {
-  hud.println(F("Initialising I/O."));
+  Serial.println(F("Initialising I/O."));
 
   pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(actPin, INPUT);
-  pinMode(ledPin, OUTPUT);
-  pinMode(lsrPin, OUTPUT);
-  pinMode(trgPin, INPUT_PULLUP);
+  pinMode(PIN_ACT, INPUT);
+  pinMode(PIN_LED, OUTPUT);
+  pinMode(PIN_LSR, OUTPUT);
+  pinMode(PIN_TRG, INPUT_PULLUP);
 
-  hud.println(F("Randomising."));
-  randomSeed(analogRead(PIN_RND));  // Randomise
+  pinMode(PIN_PIR, INPUT);
+  pinMode(PIN_SEN, INPUT_PULLUP);
 
-  hud.println(F("Checking SFX Board."));
+  Serial.println(F("Randomising."));
+  randomSeed(analogRead(A0));  // Randomise
+
+  Serial.println(F("Checking SFX Board."));
   ss.begin(9600);
   
   if (!reset()) {
-    hud.println(F("ERROR: Board not responding!"));
+    Serial.println(F("ERROR: Board not responding!"));
     while (true) {
       S_O_S();
       gap(EOW_LEN);
@@ -77,12 +69,12 @@ init()
 bool T800Westinghouse::
 reset()
 {
-  digitalWrite(resetPin, LOW);
-  pinMode(resetPin, OUTPUT);
+  digitalWrite(PIN_RST, LOW);
+  pinMode(PIN_RST, OUTPUT);
 
   delay(10);
   
-  pinMode(resetPin, INPUT);
+  pinMode(PIN_RST, INPUT);
   delay(1000); // Let it boot
 
   readLine();
@@ -100,12 +92,37 @@ reset()
 }
 
 
+bool T800Westinghouse::
+isMotionDetected() {
+  int pirValue = digitalRead(PIN_PIR);
+  long distance = sr04.read();
+  bool rc = false;
+  
+  if (pirValue || abs(lastDistance - distance) > lastDistance / 4) {
+    Serial.print(("Motion! PIR: "));
+    Serial.print(pirValue);
+    Serial.print(" @ ");
+    Serial.print(distance);
+    Serial.print("cm (");
+    Serial.print(lastDistance - distance);
+    Serial.println(" cm)");
+
+    rc = true;
+    lastDistance = distance;
+  }
+
+  return rc;
+}
+
+
 int T800Westinghouse::
 readLine() {
   int x = ss.readBytesUntil('\n', lineBuffer, sizeof(lineBuffer) - 1);
-  lineBuffer[x] = 0;
+  lineBuffer[x] = '\0';
 
-  hud.println(lineBuffer);
+  if(x > 1) {
+    Serial.println(lineBuffer);
+  }
 
   return x;
 }
@@ -115,9 +132,9 @@ bool T800Westinghouse::
 fire(int n) {
   char c = '0' + n; // Convert file number to char '0' through '9'.
 
-  hud.println(FIRE_NAMES[n]);
+  Serial.println(FIRE_NAMES[n]);
 
-  //Send #n to the SFX board.
+  // Send #n to the SFX board.
   ss.print(F("#"));
   ss.println(c);
 
@@ -172,7 +189,7 @@ fire() {
   }
 
   if(!rc) {
-    hud.println("ERROR: Misfire!");
+    Serial.println("ERROR: Misfire!");
     S_O_S();
   }
 
@@ -194,15 +211,15 @@ muzzleFlash(const struct FlashTiming *timings, bool laser)
     
     // Wait to turn on flash.
     delay(onDelay);
-    digitalWrite(ledPin, HIGH);
+    digitalWrite(PIN_LED, HIGH);
     if(laser) {
-      digitalWrite(lsrPin, HIGH);
+      digitalWrite(PIN_LSR, HIGH);
     }
 
     // Wait to turn off flash.
     delay(offDelay);
-    digitalWrite(ledPin, LOW);
-    digitalWrite(lsrPin, LOW);
+    digitalWrite(PIN_LED, LOW);
+    digitalWrite(PIN_LSR, LOW);
 
     // Now we're at flash-off point, move to next flash.
     ms = timings->offMilli;
@@ -223,7 +240,7 @@ muzzleFlash(const struct FlashTiming *timings, bool laser)
 
       break; // Abort sequence
     }
-  } while(!digitalRead(actPin));
+  } while(!digitalRead(PIN_ACT));
 }
 
 

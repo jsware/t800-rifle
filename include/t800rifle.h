@@ -11,6 +11,7 @@
 #define INCLUDED_T800RIFLE_H
 #include <Arduino.h>
 #include <SoftwareSerial.h>
+#include <Ultrasonic.h>
 
 /**
  * @brief Westinghouse M95A! Phased Plasma Rifle in a 40W Range.
@@ -24,16 +25,19 @@ class T800Westinghouse
     //
 
     // AdaFruit Audio FX Mini Sound Board: https://www.adafruit.com/product/2341.
-    static const int SFX_TX = 2;
-    static const int SFX_RX = 3;
-    static const int SFX_RST = 4;
-    static const int SFX_ACT = 5;
-    static const int SFX_LSR = 6;
-    static const int SFX_LED = 7;
+    static const int PIN_TX = 2;  // Transmit Pin
+    static const int PIN_RX = 3;  // Receive Pin
+    static const int PIN_RST = 4; // Reset Pin
+    static const int PIN_ACT = 5; // Activity (Play) Pin
 
-    // Unconnected AR PIN for random seed generation.
-    static const int PIN_RND = 0;
-    static const int PIN_TRG = 8;
+    static const int PIN_LSR = 6; // Laser Pin
+    static const int PIN_LED = 7; // LED Pin
+    static const int PIN_TRG = 8; // Trigger Pin
+
+    static const int PIN_SEN = 9;  // Sensoring Pin.
+    static const int PIN_PIR = 10; // PIR Sensor Pin.
+    static const int PIN_ECH = 11; // Ultrasonic Echo Pin.
+    static const int PIN_SND = 12; // Trigger (Send) Pin.
 
     // Operational modes.
     static const char MODE_OFF = 'Q'; // No firing.
@@ -55,20 +59,13 @@ class T800Westinghouse
      * @brief Construct a new Westinghouse Rifle controller.
      * 
      * @param hud Heads-Up-Display for diagnostic output.
-     * @param txPin Transmit commands to SFX board (default SFX_TX).
-     * @param rxPin  Receive responses from SFX board (default SFX_RX).
-     * @param resetPin Reset SFX board (default SFX_RST).
+     * @param txPin Transmit commands to SFX board (default PIN_TX).
+     * @param rxPin  Receive responses from SFX board (default PIN_RX).
+     * @param resetPin Reset SFX board (default PIN_RST).
      * @param actPin Monitor SFX playing activity.
      * @param ledPin Control muzzle flash.
      */
-    T800Westinghouse(Stream &hud,
-                     uint8_t txPin = SFX_TX,
-                     uint8_t rxPin = SFX_RX,
-                     uint8_t resetPin = SFX_RST,
-                     uint8_t actPin = SFX_ACT,
-                     uint8_t ledPin = SFX_LED,
-                     uint8_t lsrPin = SFX_LSR,
-                     uint8_t trgPin = PIN_TRG);
+    T800Westinghouse();
 
   public:
     //
@@ -113,13 +110,31 @@ class T800Westinghouse
      */
     void setMode(char mode);
 
+    bool isActive() {return rifleMode == MODE_AGGRESSIVE;}
+    
     /**
      * @brief Determine if the trigger is pressed
      * 
      * @return true Trigger button pressed.
      * @return false Trigger button not pressed.
      */
-    bool isTriggered() {return (digitalRead(trgPin) == LOW);}
+    bool isTriggered() {return (digitalRead(PIN_TRG) == LOW);}
+
+    /**
+     * @brief Determine if sensors are connected.
+     * 
+     * @return true Sensors connected.
+     * @return false Sensors not connected.
+     */
+    bool isSensoring() {return (digitalRead(PIN_SEN) == LOW);}
+
+    /**
+     * @brief Determine if motion is detected.
+     * 
+     * @return true Motion detected.
+     * @return false Motion not detected.
+     */
+    bool isMotionDetected();
 
   private:
     //
@@ -139,17 +154,11 @@ class T800Westinghouse
     static const char *FIRE_NAMES[]; // Names of each shot.
 
     SoftwareSerial ss; // SFX board serial communications.
-    Stream &hud;  // Heads-up-Display for diagnostics.
-
-    uint8_t resetPin; // Pin to reset SFX board.
-    uint8_t actPin; // Pin to monitor SFX board activity.
-
-    uint8_t ledPin; // Pin to control muzzle flash.
-    uint8_t lsrPin; // Pin to control muzzle laser.
-    uint8_t trgPin; // Pin to control manual firing trigger.
-    
     char rifleMode; // Operational mode.
     int lastFire; // Last fire sound used.
+
+    Ultrasonic sr04; // SR04 ultrasonic sensor.
+    int lastDistance; // Last sensoring distance recorded.
 
     char lineBuffer[80]; // Capture SFX board responses.
 };

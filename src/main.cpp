@@ -14,7 +14,7 @@
 #include "ver_info.h"
 
 // Create a rifle.
-T800Westinghouse rifle = T800Westinghouse(Serial);
+T800Westinghouse rifle = T800Westinghouse();
 
 /**
  * @brief One-time setup code here.
@@ -37,7 +37,10 @@ void setup() {
  * 
  */
 void loop() {
-  static int count = 0;
+  static unsigned long count = 0;
+  static const unsigned long INTERVAL = 2000L;
+  static unsigned long lastMillis = millis();
+  unsigned long thisMillis = millis();
   char cmd = '\0';
 
   ++count;
@@ -101,7 +104,21 @@ void loop() {
         }
         break;
     }
+  } else if(rifle.isSensoring() & rifle.isActive()) {
+    if(thisMillis - lastMillis > INTERVAL) {
+      Serial.print(F("Scanning... "));
+      Serial.println(count);
+    }
+
+    if(rifle.isMotionDetected()) {
+      Serial.println(F("Target aquired!"));
+      rifle.fire();
+    }
   } else if(!random(0,10)) {
     rifle.fire();
+  }
+
+  if(thisMillis - lastMillis > INTERVAL) {
+    lastMillis = thisMillis;
   }
 }
