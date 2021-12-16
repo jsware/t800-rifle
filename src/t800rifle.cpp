@@ -72,10 +72,10 @@ reset()
   digitalWrite(PIN_RST, LOW);
   pinMode(PIN_RST, OUTPUT);
 
-  delay(10);
+  wait(10);
   
   pinMode(PIN_RST, INPUT);
-  delay(1000); // Let it boot
+  wait(1000); // Let it boot
 
   readLine();
   readLine();
@@ -83,7 +83,7 @@ reset()
     return false;
   }
 
-  delay(250);
+  wait(250);
 
   readLine(); // FAT type.
   readLine(); // Files found.
@@ -210,14 +210,14 @@ muzzleFlash(const struct FlashTiming *timings, bool laser)
     int offDelay = timings->offMilli - onDelay - ms; // Delay to flash off.
     
     // Wait to turn on flash.
-    delay(onDelay);
+    wait(onDelay);
     digitalWrite(PIN_LED, HIGH);
     if(laser) {
       digitalWrite(PIN_LSR, HIGH);
     }
 
     // Wait to turn off flash.
-    delay(offDelay);
+    wait(offDelay);
     digitalWrite(PIN_LED, LOW);
     digitalWrite(PIN_LSR, LOW);
 
@@ -231,9 +231,9 @@ muzzleFlash(const struct FlashTiming *timings, bool laser)
     }
   }
 
-  // Wait till SFX board shows no play activity.
+  // delay till SFX board shows no play activity.
   do {
-    delay(100);
+    wait(100);
 
     if(isTriggered()) {
       ss.print(F("q\n"));
@@ -384,13 +384,13 @@ const struct FlashTiming *T800Westinghouse::FLASH_TIMINGS[] = {
 };
 
 const char *T800Westinghouse::FIRE_NAMES[] = {
-  "-- Single shot ----------",
-  "-- Four slow ------------",
-  "-- Four fast ------------",
-  "-- Six fast -------------",
-  "-- Six ultra fast -------",
-  "-- Two short bursts -----",
-  "-- Two long bursts ------",
-  "-- Three bursts ---------",
-  "-- You are terminated ---"
+  "Single shot",
+  "Four slow",
+  "Four fast",
+  "Six fast",
+  "Six ultra fast",
+  "Two short bursts",
+  "Two long bursts",
+  "Three bursts",
+  "You are terminated"
 };

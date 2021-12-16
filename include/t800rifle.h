@@ -110,7 +110,13 @@ class T800Westinghouse
      */
     void setMode(char mode);
 
-    bool isActive() {return rifleMode == MODE_AGGRESSIVE;}
+    /**
+     * @brief Identify if the rifle is active.
+     * 
+     * @return true 
+     * @return false 
+     */
+    bool isActive() {return rifleMode != MODE_OFF;}
     
     /**
      * @brief Determine if the trigger is pressed
@@ -140,10 +146,34 @@ class T800Westinghouse
     //
     // Helpers...
     //
+
+    /**
+     * @brief Read line of text from soud board.
+     * 
+     * @return Length of characters read.
+     */
     int readLine();
 
+    /**
+     * @brief Flash the muzzle in time with the sounds.
+     * 
+     * @param timings Flash timing to use.
+     * @param laser Also flash the laser.
+     */
     void muzzleFlash(const struct FlashTiming *timings, bool laser = false);
 
+    /**
+     * @brief Wait for the required number of milliseconds. An alternative to
+     *        delay() which does not pause the Arduino (allows interrupts to
+     *        continue running and handles if interrupts cause delays).
+     * 
+     * @param ms The number of milliseconds to wait (1000 = 1 second).
+     */
+    static void wait(unsigned long ms) {
+        unsigned long t = millis() + ms;
+        while(millis() < t);
+    }
+    
   private:
     //
     // Implementation...

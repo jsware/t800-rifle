@@ -29,7 +29,7 @@ void setup() {
 
   rifle.init();
 
-  Serial.println(F("System Restart Complete"));
+  Serial.println(F("\nSystem Restart Complete\n"));
 }
 
 /**
@@ -96,8 +96,8 @@ void loop() {
       case '6':
       case '7':
       case '8':
-        Serial.print(F("Fire Mode "));
-        Serial.println(cmd);
+        Serial.print(cmd);
+        Serial.print(F(": "));
         rifle.setMode(T800Westinghouse::MODE_OFF);
         if(!rifle.fire(cmd - '0')) {
           Serial.println(F("ERROR: PRIMARY WEAPON DAMAGED SEEK ALTERNATIVE"));
