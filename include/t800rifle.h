@@ -11,7 +11,12 @@
 #define INCLUDED_T800RIFLE_H
 #include <Arduino.h>
 #include <SoftwareSerial.h>
-#include <Ultrasonic.h>
+
+/* Choose if using Ultrasonic SR04 sensor */
+#undef USE_ULTRASONIC
+#ifdef USE_ULTRASONIC
+#include <SR04.h>
+#endif
 
 /**
  * @brief Westinghouse M95A! Phased Plasma Rifle in a 40W Range.
@@ -25,8 +30,8 @@ class T800Westinghouse
     //
 
     // AdaFruit Audio FX Mini Sound Board: https://www.adafruit.com/product/2341.
-    static const int PIN_TX = 2;  // Transmit Pin
-    static const int PIN_RX = 3;  // Receive Pin
+    static const int PIN_RX = 2;  // Receive from SFX Pin
+    static const int PIN_TX = 3;  // Transmit to SFX Pin
     static const int PIN_RST = 4; // Reset Pin
     static const int PIN_ACT = 5; // Activity (Play) Pin
 
@@ -187,8 +192,10 @@ class T800Westinghouse
     char rifleMode; // Operational mode.
     int lastFire; // Last fire sound used.
 
-    Ultrasonic sr04; // SR04 ultrasonic sensor.
+#ifdef USE_ULTRASONIC
+    SR04 sr04; // SR04 ultrasonic sensor.
     int lastDistance; // Last sensoring distance recorded.
+#endif
 
     char lineBuffer[80]; // Capture SFX board responses.
 };

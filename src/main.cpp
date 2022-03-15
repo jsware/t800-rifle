@@ -104,7 +104,7 @@ void loop() {
         }
         break;
     }
-  } else if(rifle.isSensoring() & rifle.isActive()) {
+  } else if(rifle.isSensoring() && rifle.isActive()) {
     if(thisMillis - lastMillis > INTERVAL) {
       Serial.print(F("Scanning... "));
       Serial.println(count);

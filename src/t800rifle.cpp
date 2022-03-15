@@ -26,11 +26,13 @@ struct FlashTiming {
 
 T800Westinghouse::
 T800Westinghouse()
-: ss(PIN_TX,PIN_RX)
+: ss(PIN_RX,PIN_TX)
 , rifleMode(MODE_DEFAULT)
 , lastFire(-1)
-, sr04(PIN_SND, PIN_ECH)
-, lastDistance(sr04.read())
+#ifdef USE_ULTRASONIC
+, sr04(PIN_ECH, PIN_SND)
+, lastDistance(sr04.Distance())
+#endif
 {
 
 }
@@ -95,20 +97,31 @@ reset()
 bool T800Westinghouse::
 isMotionDetected() {
   int pirValue = digitalRead(PIN_PIR);
-  long distance = sr04.read();
+#ifdef USE_ULTRASONIC
+  long distance = sr04.Distance();
+#endif
   bool rc = false;
-  
+
+#ifdef USE_ULTRASONIC  
   if (pirValue || abs(lastDistance - distance) > lastDistance / 4) {
+#else
+  if (pirValue) {
+#endif
     Serial.print(("Motion! PIR: "));
     Serial.print(pirValue);
+#ifdef USE_ULTRASONIC
     Serial.print(" @ ");
     Serial.print(distance);
     Serial.print("cm (");
     Serial.print(lastDistance - distance);
-    Serial.println(" cm)");
+    Serial.print(" cm)");
+#endif
+    Serial.println("");
 
     rc = true;
+#ifdef ULTRASONIC
     lastDistance = distance;
+#endif
   }
 
   return rc;
