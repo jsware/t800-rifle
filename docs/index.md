@@ -48,7 +48,7 @@ A rifle modification for the Agora/Hachette T-800 1:2 size Endoskeleton model. T
 
 See the following video for an example of automatic random firing with phased plasma bolt effect (smoke/humidifier required for laser visibility).
 
-{% include video id="Iy9KLVXVm1U" provider="youtube" %}
+{% include video id="efiEVk9kDKA" provider="youtube" %}
 
 ## Instructions
 
@@ -118,7 +118,7 @@ I reengineered to use a LiPoly battery and charger to reduce the weight and also
 
 The video below shows the push button fixed behind the trigger and the LiPoly version. You can see more electronics are behind the handle, making the rifle more balanced.
 
-{% include video id="XoGrHtZ0vBg" provider="youtube" %}
+{% include video id="2Sevzvk_5gs" provider="youtube" %}
 
 Once the electronics are put together the gun fires randomly, but pulling the trigger can make it fire manually. Power off/on again to return to random fire.
 
@@ -183,4 +183,4 @@ I would suggest only doing this if you have an aptitude for electronics. You wil
 
 Hopefully this will help any budding modellers to make modifications to their T-800 Endoskeleton. With this rifle modification, my [T-800 Eyes](https://www.jsware.io/t800-eyes/) modification and the [excellent modification](https://t800controller.com/demos.html) from Alex McPherson it creates an epic combination.
 
-{% include video id="Zru3uAJLALw" provider="youtube" %}
+{% include video id="icEJ3l1Op4s" provider="youtube" %}
